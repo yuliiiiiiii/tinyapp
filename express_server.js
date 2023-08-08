@@ -7,13 +7,17 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
-app.get("/", (request, response) => {
+app.get("/", (request, response) => {//get in order to see your response! get is to get whatever info on the webpage when you first landed on the page.
   response.send("Hello!");
 });
 
 app.get("/urls.json", (request, response) => {
   response.json(urlDatabase);
 })
+
+app.get("/hello", (request, response) => {
+  response.send("<html><body>Hello <b>Word</b></body></html>\n");
+});
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port${PORT}!`);
