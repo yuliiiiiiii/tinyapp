@@ -21,6 +21,11 @@ app.get("/hello", (request, response) => {
   response.send("<html><body>Hello <b>Word</b></body></html>\n");
 });
 
+app.get("/urls", (request, response) => {
+  const templateVars = {urls: urlDatabase}; //the variable needs to be inside an object so we can access values through keys 
+  response.render('urls_index', templateVars); //('the template to show HTML on the /urls web page', the variable whose value is an object to be referenced in the template)
+})
+
 app.listen(PORT, () => {
   console.log(`Example app listening on port${PORT}!`);
 });
