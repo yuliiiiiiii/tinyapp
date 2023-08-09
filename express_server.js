@@ -60,6 +60,11 @@ app.get("/u/:id", (req, res) => {
   res.redirect(urlDatabase[req.params.id]);
 }); //redirct to its longURL, using route parameter as key to find its value(longURL) in the database
 
+app.post("/urls/:id/delete", (req, res) => {
+  delete urlDatabase[req.params.id]; //delete the route parameter(key) and it's value from the urlDatabase which is an object
+  res.redirect("/urls");
+})
+
 app.listen(PORT, () => {
   console.log(`Example app listening on port${PORT}!`);
 });
