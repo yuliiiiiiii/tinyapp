@@ -1,4 +1,5 @@
 const express = require('express');
+const cookieParser = require('cookie-parser'); //Parse Cookie header into readables, and populate req.cookies with an object keyed by the cookie names
 const { redirect } = require('express/lib/response');
 const app = express();
 const PORT = 8080;
@@ -7,6 +8,8 @@ app.set("view engine", "ejs");
 
 app.use(express.urlencoded({ extended: true})); 
 // in order to use request.body from a post method, to parse the data to be readable for humans. The body-parse library will convert the request body from a Buffer into string.
+
+app.use(cookieParser()) //in order to use req.cookie
 
 let urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -23,25 +26,30 @@ function generateRandomString() {
   return randomId;
 }
 
-app.get("/", (request, response) => {//get in order to see your response! get is to get whatever info on the webpage when you first landed on the page.
-  response.send("Hello!");
+app.get("/", (req, res) => {//get in order to see your response! get is to get whatever info on the webpage when you first landed on the page.
+  res.send("Hello!");
 });
 
-app.get("/urls.json", (request, response) => {
-  response.json(urlDatabase);
+app.get("/urls.json", (req, res) => {
+  res.json(urlDatabase);
 });
 
-app.get("/hello", (request, response) => {
-  response.send("<html><body>Hello <b>Word</b></body></html>\n");
+app.get("/hello", (req, res) => {
+  res.send("<html><body>Hello <b>Word</b></body></html>\n");
 });
 
-app.get("/urls", (request, response) => {
-  const templateVars = {urls: urlDatabase}; //the variable needs to be inside an object so we can access values through keys
-  response.render('urls_index', templateVars); //('the template to show HTML on the /urls web page', the variable whose value is an object to be referenced in the template)
+app.get("/urls", (req, res) => {
+  const templateVars = {
+    username: req.cookies["username"],
+    urls: urlDatabase}; //the variable needs to be inside an object so we can access values through keys
+  res.render('urls_index', templateVars); //('the template to show HTML on the /urls web page', the variable whose value is an object to be referenced in the template)
 });
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const templateVars = {
+    username: req.cookies["username"]
+  }
+  res.render("urls_new", templateVars);
 })
 
 app.post("/urls", (req, res) => {
@@ -53,7 +61,11 @@ app.post("/urls", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id]};
+  const templateVars = { 
+    id: req.params.id, 
+    longURL: urlDatabase[req.params.id],
+    username: req.cookies["username"]
+  };
   res.render("urls_show", templateVars);
 });
 
