@@ -72,7 +72,13 @@ app.post("/urls/:id", (req, res) => {
 app.post("/urls/:id/delete", (req, res) => {
   delete urlDatabase[req.params.id]; //delete the route parameter(key) and it's value from the urlDatabase which is an object
   res.redirect("/urls");
-})
+});
+
+app.post("/login", (req, res) => {
+  res.cookie("username", req.body.username);//set a cookie named username to the value submitted in the req body, "username", via the login form - in _header.ejs/input
+  res.redirect("/urls");
+}
+)
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port${PORT}!`);
