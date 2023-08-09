@@ -20,7 +20,9 @@
           <!-- the <% %> tells ejs this is javascript -->
           <!-- if username was added, it will show the username, if the username is falsy, it will send out a form -->
           <p>Logged in as: <%=username%></p>
-         
+          <form method="POST" action="/logout">
+          <button type="submit">Log Out</button>
+          </form>
         <% } else { %>
         <form method="POST" action="/login">
           

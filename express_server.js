@@ -89,8 +89,12 @@ app.post("/urls/:id/delete", (req, res) => {
 app.post("/login", (req, res) => {
   res.cookie("username", req.body.username);//set a cookie named username to the value submitted in the req body, "username", via the login form - in _header.ejs/input
   res.redirect("/urls");
-}
-)
+});
+
+app.post("/logout", (req, res) => {
+  res.clearCookie("username");
+  res.redirect("/urls");
+})
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port${PORT}!`);
