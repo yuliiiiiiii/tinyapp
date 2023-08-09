@@ -1,4 +1,5 @@
 const express = require('express');
+const { redirect } = require('express/lib/response');
 const app = express();
 const PORT = 8080;
 
@@ -7,7 +8,7 @@ app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true})); 
 // in order to use request.body from a post method, to parse the data to be readable for humans. The body-parse library will convert the request body from a Buffer into string.
 
-const urlDatabase = {
+let urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
@@ -44,15 +45,20 @@ app.get("/urls/new", (req, res) => {
 })
 
 app.post("/urls", (req, res) => {
+  let id = generateRandomString();
+  urlDatabase[id] = req.body.longURL; //save the id = longURL pair in urldatabase. longURL is from urls_news.ejs, input/name
   console.log(req.body); // need to use the Express library's body parsing middleware to make the request.body hunmanreadable
-  res.send("ok");
-})
+  res.redirect(`/u/${id}`); //when received a post request to /urls, it redirects to /urls/new id
+});
 
 app.get("/urls/:id", (req, res) => {
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id]};
   res.render("urls_show", templateVars);
 });
 
+app.get("/u/:id", (req, res) => {
+  res.redirect(urlDatabase[req.params.id]);
+}); //redirct to its longURL, using route parameter as key to find its value(longURL) in the database
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port${PORT}!`);
