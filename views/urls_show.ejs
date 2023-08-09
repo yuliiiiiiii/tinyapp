@@ -20,9 +20,17 @@
       <h5 class="card-title">TinyURL for: <%= longURL %></h5>
       <p class="card-text">
         Short URL ID: <a href="/urls/<%= id %>"><%= id %></a>
+    </div>
+    <div class="card-footer text-muted">
+      <h1>Edit</h1>
+      <p>
+        <form method="post" action="/urls/<%= id %>">
+          New URL: <input name="editLongURL" placeholder="http://">
+          <!-- need to add name="key" in order to find the client inputed longURL from req.body.key -->
+          <button type="submit">Submit</button>
+        </form>
       </p>
     </div>
-    <div class="card-footer text-muted"></div>
   </div>
   <!-- Bootstrap JS -->
   <script

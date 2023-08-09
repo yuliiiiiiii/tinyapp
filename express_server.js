@@ -48,6 +48,7 @@ app.post("/urls", (req, res) => {
   let id = generateRandomString();
   urlDatabase[id] = req.body.longURL; //save the id = longURL pair in urldatabase. longURL is from urls_news.ejs, input/name
   console.log(req.body); // need to use the Express library's body parsing middleware to make the request.body hunmanreadable
+  
   res.redirect(`/u/${id}`); //when received a post request to /urls, it redirects to /urls/new id
 });
 
@@ -59,6 +60,14 @@ app.get("/urls/:id", (req, res) => {
 app.get("/u/:id", (req, res) => {
   res.redirect(urlDatabase[req.params.id]);
 }); //redirct to its longURL, using route parameter as key to find its value(longURL) in the database
+
+app.post("/urls/:id", (req, res) => {
+  //update the database, same id but different req.body.editLongURL
+  let path = req.params.id;
+  urlDatabase[path] = req.body.editLongURL;
+  res.redirect("/urls");
+}
+ )
 
 app.post("/urls/:id/delete", (req, res) => {
   delete urlDatabase[req.params.id]; //delete the route parameter(key) and it's value from the urlDatabase which is an object
