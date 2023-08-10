@@ -50,6 +50,7 @@ app.get("/urls/new", (req, res) => {
     username: req.cookies["username"]
   }
   res.render("urls_new", templateVars);
+  // the browser sends cookie data with subsequent get request
 })
 
 app.post("/urls", (req, res) => {
@@ -94,6 +95,13 @@ app.post("/login", (req, res) => {
 app.post("/logout", (req, res) => {
   res.clearCookie("username");
   res.redirect("/urls");
+})
+
+app.get("/register", (req,res) => {
+  const templateVars = {
+    username:req.cookies["username"]
+  };
+  res.render("urls_regist", templateVars);
 })
 
 app.listen(PORT, () => {
