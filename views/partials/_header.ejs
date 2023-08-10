@@ -16,21 +16,27 @@
       <div class="navbar-nav">
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
-        <% if(username) { %> 
-          <!-- the <% %> tells ejs this is javascript -->
-          <!-- if username was added, it will show the username, if the username is falsy, it will send out a form -->
-          <p>Logged in as: <%=username%></p>
-          <form method="POST" action="/logout">
-          <button type="submit">Log Out</button>
-          </form>
-        <% } else { %>
+        
+          <% if(user) { %> 
+            <!-- the <% %> tells ejs this is javascript -->
+            <!-- if username was added, it will show the username,  if the username is falsy, it will send out a form -->
+            
+            <p>Logged in as: <%=user.email%></p>
+            <form method="POST" action="/logout">
+            <button type="submit">Log Out</button>
+            </form>
+           
+          <% } else { %>
         <form method="POST" action="/login">
-          
-          <input name="username" type="text">
+          <label>Email:</label>
+          <input name="email" type="email"><br>
+          <label>Password:</label>
+          <input name="password" type="password">
           <button type="submit">Login</button>
-         
         </form>
-      <% } %>
+        
+          <% } %>
+    
       </div>
     </div>
   </nav>

@@ -43,14 +43,15 @@ app.get("/hello", (req, res) => {
 
 app.get("/urls", (req, res) => {
   const templateVars = {
-    username: req.cookies["username"],
+    id: req.params.id, 
+    user: users[req.cookies.user_id],
     urls: urlDatabase}; //the variable needs to be inside an object so we can access values through keys
   res.render('urls_index', templateVars); //('the template to show HTML on the /urls web page', the variable whose value is an object to be referenced in the template)
 });
 
 app.get("/urls/new", (req, res) => {
   const templateVars = {
-    username: req.cookies["username"]
+    user: users[req.cookies.user_id]
   }
   res.render("urls_new", templateVars);
   // the browser sends cookie data with subsequent get request
@@ -68,7 +69,7 @@ app.get("/urls/:id", (req, res) => {
   const templateVars = { 
     id: req.params.id, 
     longURL: urlDatabase[req.params.id],
-    username: req.cookies["username"]
+    user: users[req.cookies.user_id]
   };
   res.render("urls_show", templateVars);
 });
@@ -91,18 +92,30 @@ app.post("/urls/:id/delete", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  res.cookie("username", req.body.username);//set a cookie named username to the value submitted in the req body, "username", via the login form - in _header.ejs/input
+  for (let userID in users) {
+    if (req.body.email === users[userID].email) {
+      console.log("email exist");
+      if (req.body.password === users[userID].password) {
+        console.log("password matches");
+        res.redirect("/urls")
+      }
+    } else {
+      res.redirect("/register");
+    }
+  }
+
+  // res.cookie("email", req.body.email);//set a cookie named username to the value submitted in the req body, "username", via the login form - in _header.ejs/input
   res.redirect("/urls");
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
+  res.clearCookie("user_id");
   res.redirect("/urls");
 })
 
 app.get("/register", (req,res) => {
   const templateVars = {
-    username:req.cookies["username"]
+    user: users[req.cookies.user_id]
   };
   res.render("urls_regist", templateVars);
 })
