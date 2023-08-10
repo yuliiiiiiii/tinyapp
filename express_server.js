@@ -91,16 +91,26 @@ app.post("/urls/:id/delete", (req, res) => {
   res.redirect("/urls");
 });
 
+app.get("/login", (req,res) => {
+  templateVars = {
+    user:users[req.cookies.user_id]
+  }
+  res.render("urls_login", templateVars);
+})
+
 app.post("/login", (req, res) => {
+  // console.log("email", req.body.email);
   for (let userID in users) {
     if (req.body.email === users[userID].email) {
       console.log("email exist");
       if (req.body.password === users[userID].password) {
         console.log("password matches");
+        res.cookie("user_id", getUserByEmail(req.body.email));
         res.redirect("/urls")
-      }
+      } 
     } else {
-      res.redirect("/register");
+      return res.send("Email or password is incorrest");
+      
     }
   }
 
@@ -123,7 +133,7 @@ app.get("/register", (req,res) => {
 const getUserByEmail = function(email) {
   for (let userID in users) {
     if (email === users[userID].email) {
-      return users[userID];
+      return userID;
     }
   }
     return null;
@@ -142,6 +152,7 @@ app.post("/register", (req, res) => {
       return;
     }
   };
+  // if the entered email already exist, return 400
 
   const userRandomID = generateRandomString();
   users[userRandomID] = {
