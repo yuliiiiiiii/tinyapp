@@ -120,7 +120,29 @@ app.get("/register", (req,res) => {
   res.render("urls_regist", templateVars);
 })
 
+const getUserByEmail = function(email) {
+  for (let userID in users) {
+    if (email === users[userID].email) {
+      return users[userID];
+    }
+  }
+    return null;
+};
+
 app.post("/register", (req, res) => {
+  if (req.body.email.length === 0 || req.body.password.length === 0 ) {
+    res.send("400");
+    return;
+  };
+
+  const inputEmail = req.body.email;
+  for (let userID in users) {
+    if (inputEmail === users[userID].email) {
+      res.send("400");
+      return;
+    }
+  };
+
   const userRandomID = generateRandomString();
   users[userRandomID] = {
     id: userRandomID,
