@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
+    integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous" />
+  <title>TinyApp</title>
+</head>
+
+<body>
+  <%- include('partials/_header') %>
+    <main style="margin: 1em;">
+      <h1>Login</h1>
+      <form method="post" action="/login">
+        <label>Email: </label>
+        <input type="email" name="email" class="form-control" placeholder="Enter email"><br>
+        <label>Password: </label>
+        <input type="password" name="password" class="form-control" placeholder="Password"><br>
+        <button type="submit" class="btn btn-primary">Login</button>
+      </form>
+    </main>
+
+</body>
+
+</html>

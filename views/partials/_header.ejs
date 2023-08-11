@@ -21,14 +21,14 @@
             <!-- the <% %> tells ejs this is javascript -->
             <!-- if username was added, it will show the username,  if the username is falsy, it will send out a form -->
             
-            <p>Logged in as: <%=user.email%></p>
+            <p class="nav-item nav-link">Logged in as: <%=user.email%></p>
             <form method="POST" action="/logout">
-            <button type="submit">Log Out</button>
+            <button type="submit" class="btn btn-warning">Log Out</button>
             </form>
            
           <% } else { %>
-            <p><a href="/register">Register </a>
-            <a href="/login">Login</a></p>
+            <a href="/login" class="nav-item nav-link">Login</a>
+            <a href="/register" class="nav-item nav-link">Register</a>
           <% } %>
     
       </div>
