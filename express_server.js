@@ -114,6 +114,12 @@ app.post("/urls/:id/delete", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
+  const id = req.cookies.user_id;
+  if (id) {
+    res.redirect("/urls");
+    // if user logged in, can find it's id from req.cookies,user_id.
+  };
+
   templateVars = {
     user: users[req.cookies.user_id]
   };
@@ -166,6 +172,12 @@ app.post("/logout", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
+  const id = req.cookies.user_id;
+  if (id) {
+    res.redirect("/urls");
+    // if user logged in, can find it's id from req.cookies,user_id.
+  };
+
   const templateVars = {
     user: users[req.cookies.user_id]
   };
