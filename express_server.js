@@ -72,6 +72,11 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
+  const userId = req.cookies.user_id;
+  if (!userId) {
+    res.redirect("/login");
+  }
+
   const templateVars = {
     user: users[req.cookies.user_id]
   };
@@ -80,6 +85,13 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
+  const userId = req.cookies.user_id;
+  if (!userId) {
+    res.send("<h1>Please log in to shorten URLs</h1>");
+    return;
+    // even though we redirect the GET /urls/new requests to GET /login, we still have to protect the POST /urls route too. Hiding the page to submit new urls isn't enough - a malicious user could use simple curl commands to interact with our server.
+  }
+  
   let id = generateRandomString();
   urlDatabase[id] = req.body.longURL; //save the id = longURL pair in urldatabase. longURL is from urls_news.ejs, input/name
   console.log(req.body); // need to use the Express library's body parsing middleware to make the request.body hunmanreadable
@@ -97,6 +109,12 @@ app.get("/urls/:id", (req, res) => {
 });
 
 app.get("/u/:id", (req, res) => {
+  let shortenURL = req.params.id; //to access :d which is entered by user in the domain bar
+  let longURL = urlDatabase[shortenURL];
+  if (!longURL) {
+    res.send("<h1>The shortended url you are trying to access does not exist.</h1>");
+  }
+
   res.redirect(urlDatabase[req.params.id]);
 }); //redirct to its longURL, using route parameter as key to find its value(longURL) in the database
 
