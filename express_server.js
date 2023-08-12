@@ -12,13 +12,19 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser()); //in order to use req.cookie
 
 let urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW",
+  },
 };
 
 let users = {
-  userRandomID: {
-    id: "userRandomID",
+  aJ48lW: {
+    id: "aJ48lW",
     email: "user@example.com",
     password: "123",
   },
@@ -31,6 +37,7 @@ let users = {
 //create a database to store and access users data
 
 const getUserByEmail = function(email) {
+
   for (let userID in users) {
     const user = users[userID];
     if (email === user.email) {
@@ -38,6 +45,19 @@ const getUserByEmail = function(email) {
     }
   }
   return null;
+};
+
+const urlsForUser = function(userId) {
+  const urls = {};
+
+  const ids = Object.keys(urlDatabase);
+  for (const id of ids) {
+    const url = urlDatabase[id];
+    if (url.userID === userId) {
+      urls[id] = url;
+    }
+  }
+  return urls;
 };
 
 function generateRandomString() {
@@ -63,10 +83,17 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
+  const userId = req.cookies.user_id;
+  const user = users[userId];
+
+  if (!user) {
+    return res.send("Not logged in, Please<a href='/login'> log in</a>");
+  };
+
   const templateVars = {
-    id: req.params.id,
-    user: users[req.cookies.user_id],
-    urls: urlDatabase
+    urls: urlsForUser(userId),
+    // return an array of id's!!!
+    user: users[userId]
   }; //the variable needs to be inside an object so we can access values through keys
   res.render('urls_index', templateVars); //('the template to show HTML on the /urls web page', the variable whose value is an object to be referenced in the template)
 });
@@ -85,61 +112,119 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  const userId = req.cookies.user_id;
-  if (!userId) {
+  const userID = req.cookies.user_id;
+  const user = users[userID];
+  if (!user) {
     res.send("<h1>Please log in to shorten URLs</h1>");
     return;
     // even though we redirect the GET /urls/new requests to GET /login, we still have to protect the POST /urls route too. Hiding the page to submit new urls isn't enough - a malicious user could use simple curl commands to interact with our server.
   }
-  
-  let id = generateRandomString();
-  urlDatabase[id] = req.body.longURL; //save the id = longURL pair in urldatabase. longURL is from urls_news.ejs, input/name
-  console.log(req.body); // need to use the Express library's body parsing middleware to make the request.body hunmanreadable
 
-  res.redirect(`/u/${id}`); //when received a post request to /urls, it redirects to /urls/new id
+  let id = generateRandomString();
+  const longURL = req.body.longURL;
+  urlDatabase[id] = { longURL, userID }; //save the id = longURL pair in urldatabase. longURL is from urls_news.ejs, input/name
+  // add userID to the urlDatabase
+  console.log(urlDatabase[id]); // need to use the Express library's body parsing middleware to make the request.body hunmanreadable
+
+  res.redirect(`/urls/${id}`); //when received a post request to /urls, it redirects to /urls/new id
 });
 
+
 app.get("/urls/:id", (req, res) => {
+  const userId = req.cookies.user_id;
+  const id = req.params.id;
+  const user = users[userId];
+  if (!urlDatabase[id]) {
+    res.send("Short URL does not exist");
+    return;
+    // check if the id exist in the database
+  }
+
+  if (!user) {
+     res.send("<h1>Please log in to see your URLs.<h1>");
+     return;
+    //  check if the user is logged in
+   };
+
+  if (urlDatabase[id].userID !== userId) {
+    res.send ("You don't own the URL");
+    return;
+    // check if user owns the shortURl
+  }
+
   const templateVars = {
-    id: req.params.id,
-    longURL: urlDatabase[req.params.id],
-    user: users[req.cookies.user_id]
+    id:id,
+    user: users[userId],
+    longURL:urlDatabase[id].longURL
   };
   res.render("urls_show", templateVars);
 });
 
 app.get("/u/:id", (req, res) => {
   let shortenURL = req.params.id; //to access :d which is entered by user in the domain bar
-  let longURL = urlDatabase[shortenURL];
+  let longURL = urlDatabase[shortenURL].longURL;
   if (!longURL) {
     res.send("<h1>The shortended url you are trying to access does not exist.</h1>");
   }
 
-  res.redirect(urlDatabase[req.params.id]);
+  res.redirect(longURL);
 }); //redirct to its longURL, using route parameter as key to find its value(longURL) in the database
 
 app.post("/urls/:id", (req, res) => {
   //update the database, same id but different req.body.editLongURL
-  let path = req.params.id;
-  urlDatabase[path] = req.body.editLongURL;
-  res.redirect("/urls");
+  const userId = req.cookies.user_id;
+  const id = req.params.id;
+  if (!urlDatabase[id]) {
+    return res.send("The URL does not exist");
+  }
+
+  if (!users[userId]) {
+    res.send("<h1>Please <a href='/login'>log in</a> to edit URL.<h1>");
+    return;
+  };
+
+  if (urlDatabase[id].userID !== userId) {
+    res.send("<h1>You are not authorised to edit.</h1>");
+    return;
+  }
+
+    urlDatabase[id].longURL = req.body.editLongURL;
+    res.redirect("/urls");
 }
 );
 
 app.post("/urls/:id/delete", (req, res) => {
-  delete urlDatabase[req.params.id]; //delete the route parameter(key) and it's value from the urlDatabase which is an object
-  res.redirect("/urls");
+  const userId = req.cookies.user_id;
+  const id = req.params.id;
+
+  if (!urlDatabase[id]) {
+    return res.send("The URL does not exist");
+  }
+
+  if (!users[userId]) {
+    res.send("Please <a href='/login'>log in</a> to delete URLs.");
+    return;
+  };
+
+  if (urlDatabase[id].userID !== userId) {
+    res.send("<h1>You are not authorised to delete.</h1>");
+    return;
+  }
+
+    delete urlDatabase[id]; //delete the route parameter(key) and it's value from the urlDatabase which is an object
+    res.redirect("/urls");
 });
 
 app.get("/login", (req, res) => {
-  const id = req.cookies.user_id;
-  if (id) {
+  const userId = req.cookies.user_id;
+  // userid is to check if the user logged in, but the user can change the value of req.cookies.user_id in DevTool in order to log in(skip the login page to go directly to /urls), so need to check if the user with the same userId exists in the users database
+  if (users[userId]) {
     res.redirect("/urls");
-    // if user logged in, can find it's id from req.cookies,user_id.
+    return;
   };
 
   templateVars = {
-    user: users[req.cookies.user_id]
+    user: users[userId]
   };
   res.render("login", templateVars);
 });
@@ -150,7 +235,7 @@ app.post("/login", (req, res) => {
 
   const user = getUserByEmail(email);
   if (!user || user.password !== password) {
-    return res.send("403 Bad log in, get lost!");
+    return res.send("403 Bad log in, Please <a href='/login'>try again</a>");
   }
 
   // if (user.password !== password) {
@@ -190,9 +275,9 @@ app.post("/logout", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  const id = req.cookies.user_id;
-  if (id) {
-    res.redirect("/urls");
+  const userId = req.cookies.user_id;
+  if (users[userId]) {
+    return res.redirect("/urls");
     // if user logged in, can find it's id from req.cookies,user_id.
   };
 
@@ -208,17 +293,17 @@ app.post("/register", (req, res) => {
   const password = req.body.password;
 
   if (!email || !password) {
-    return res.send("Email or password should not be empty, please try again.");
+    return res.send("Email or password should not be empty, please try again.Please <a href='/register'>try again</a>");
   }
 
   if (getUserByEmail(email)) {
-    return res.send("User exists, please try again");
+    return res.send("User exists, please <a href='/register'>try again</a>");
   }
 
   const id = generateRandomString();
   const user = { id, email, password };
   users[id] = user;
-  // added new user into users
+  // added new user into users database
   console.log(users);
 
   res.cookie("user_id", id);
