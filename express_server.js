@@ -3,6 +3,8 @@ const cookieParser = require('cookie-parser'); //Parse Cookie header into readab
 const { redirect } = require('express/lib/response');
 const app = express();
 const PORT = 8080;
+const bcrypt = require("bcryptjs");
+
 
 app.set("view engine", "ejs");
 
@@ -14,25 +16,31 @@ app.use(cookieParser()); //in order to use req.cookie
 let urlDatabase = {
   b6UTxQ: {
     longURL: "https://www.tsn.ca",
-    userID: "aJ48lW",
+    userID: "aJ48lW"
   },
   i3BoGr: {
     longURL: "https://www.google.ca",
-    userID: "aJ48lW",
+    userID: "aJ48lW"
   },
+  IQ6965: {
+    longURL: "http://google.com",
+    userID: "9hvRSr"
+  }
 };
 
 let users = {
-  aJ48lW: {
-    id: "aJ48lW",
-    email: "user@example.com",
-    password: "123",
-  },
+  aJ48lW: { id: 'aJ48lW', email: 'user@example.com', password: '123' },
   user2RandomID: {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "123",
+    id: 'user2RandomID',
+    email: 'user2@example.com',
+    password: '123'
   },
+  '9hvRSr': {
+    id: '9hvRSr',
+    email: 'user3@example.com',
+    hashedPassword: '$2a$10$Qkpt.I6j7YZNmsJgQQOWde/9rO8mGxFv7WnX6fFKfqTrbj4YmYGxu'
+  }
+
 };
 //create a database to store and access users data
 
@@ -217,7 +225,7 @@ app.post("/urls/:id/delete", (req, res) => {
 
 app.get("/login", (req, res) => {
   const userId = req.cookies.user_id;
-  // userid is to check if the user logged in, but the user can change the value of req.cookies.user_id in DevTool in order to log in(skip the login page to go directly to /urls), so need to check if the user with the same userId exists in the users database
+  // userid is to check if the user logged in, but the hacker can see the unencrypted cookie user_id's value and know the user id exist, and use curl to skip the login page to go directly to /urls),so also need to encrypt cookies
   if (users[userId]) {
     res.redirect("/urls");
     return;
@@ -232,20 +240,23 @@ app.get("/login", (req, res) => {
 app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-
+  
   const user = getUserByEmail(email);
-  if (!user || user.password !== password) {
+  
+  if (!user) {
     return res.send("403 Bad log in, Please <a href='/login'>try again</a>");
+    // check if user exist
   }
-
-  // if (user.password !== password) {
-  //   return res.send("Bad password, get lost!");
-  // }
-
-  res.cookie("user_id", user.id);
-  res.redirect('/urls');
-
-
+  
+  const hashedPassword = user.hashedPassword;
+  if (bcrypt.compareSync(password, hashedPassword)) {
+    res.cookie("user_id", user.id);
+    res.redirect('/urls');
+    return;
+  //check if entered password matches with the one in users 
+  }
+  
+   res.send("403 Bad log in, Please <a href='/login'>try again</a>");
 
   // console.log("email", req.body.email);
   // for (let userID in users) {
@@ -291,6 +302,8 @@ app.get("/register", (req, res) => {
 app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
+  const salt = bcrypt.genSaltSync();
+  const hashedPassword = bcrypt.hashSync(password, salt);
 
   if (!email || !password) {
     return res.send("Email or password should not be empty, please try again.Please <a href='/register'>try again</a>");
@@ -301,13 +314,16 @@ app.post("/register", (req, res) => {
   }
 
   const id = generateRandomString();
-  const user = { id, email, password };
+  const user = { id, email, hashedPassword };
   users[id] = user;
   // added new user into users database
   console.log(users);
 
   res.cookie("user_id", id);
   // set cookie user_id 's value as the random generated id
+  //But because the cookie user_id is not encrypted, people can see the user_id cookie value in the DevTool, meaning the user exists, and use that to log in without going through log in page, using %curl POST
+
+  
   res.redirect("/urls");
 
   // if (req.body.email.length === 0 || req.body.password.length === 0) {
