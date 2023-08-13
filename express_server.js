@@ -1,6 +1,8 @@
 const express = require('express');
-const cookieParser = require('cookie-parser'); //Parse Cookie header into readables, and populate req.cookies with an object keyed by the cookie names
-const { redirect } = require('express/lib/response');
+// const cookieParser = require('cookie-parser'); //Parse Cookie header into readables, and populate req.cookies with an object keyed by the cookie names
+const cookieSession = require("cookie-session");
+// cookieSession is used to read encryped cookies => req.session.user_id
+// const { redirect } = require('express/lib/response');
 const app = express();
 const PORT = 8080;
 const bcrypt = require("bcryptjs");
@@ -9,9 +11,16 @@ const bcrypt = require("bcryptjs");
 app.set("view engine", "ejs");
 
 app.use(express.urlencoded({ extended: true }));
-// in order to use request.body from a post method, to parse the data to be readable for humans. The body-parse library will convert the request body from a Buffer into string.
+// middleware => in order to use request.body from a post method, to parse the data to be readable for humans. The body-parse library will convert the request body from a Buffer into string.
 
-app.use(cookieParser()); //in order to use req.cookie
+// app.use(cookieParser()); //in order to use req.cookie
+
+ app.use(cookieSession ({
+  // in order to use cookie_session the middleware to encryp cookies
+    name: 'banana',
+    // name is the cookies key to set, whose value will be encryped
+    keys: ['one', 'two', 'three', 'four']
+ }));
 
 let urlDatabase = {
   b6UTxQ: {
@@ -91,7 +100,10 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const userId = req.cookies.user_id;
+  const userId = req.session.user_id;
+  // to read the value of encryped cookie
+  // console.log('req.session:', req.cookies);
+  console.log('req.session:', req.session);
   const user = users[userId];
 
   if (!user) {
@@ -103,24 +115,25 @@ app.get("/urls", (req, res) => {
     // return an array of id's!!!
     user: users[userId]
   }; //the variable needs to be inside an object so we can access values through keys
-  res.render('urls_index', templateVars); //('the template to show HTML on the /urls web page', the variable whose value is an object to be referenced in the template)
+  res.render('urls_index', templateVars); 
+  return;//('the template to show HTML on the /urls web page', the variable whose value is an object to be referenced in the template)
 });
 
 app.get("/urls/new", (req, res) => {
-  const userId = req.cookies.user_id;
+  const userId = req.session.user_id;
   if (!userId) {
     res.redirect("/login");
   }
 
   const templateVars = {
-    user: users[req.cookies.user_id]
+    user: users[req.session.user_id]
   };
   res.render("urls_new", templateVars);
   // the browser sends cookie data with subsequent get request
 });
 
 app.post("/urls", (req, res) => {
-  const userID = req.cookies.user_id;
+  const userID = req.session.user_id;
   const user = users[userID];
   if (!user) {
     res.send("<h1>Please log in to shorten URLs</h1>");
@@ -139,7 +152,7 @@ app.post("/urls", (req, res) => {
 
 
 app.get("/urls/:id", (req, res) => {
-  const userId = req.cookies.user_id;
+  const userId = req.session.user_id;
   const id = req.params.id;
   const user = users[userId];
   if (!urlDatabase[id]) {
@@ -180,7 +193,7 @@ app.get("/u/:id", (req, res) => {
 
 app.post("/urls/:id", (req, res) => {
   //update the database, same id but different req.body.editLongURL
-  const userId = req.cookies.user_id;
+  const userId = req.session.user_id;
   const id = req.params.id;
   if (!urlDatabase[id]) {
     return res.send("The URL does not exist");
@@ -202,7 +215,7 @@ app.post("/urls/:id", (req, res) => {
 );
 
 app.post("/urls/:id/delete", (req, res) => {
-  const userId = req.cookies.user_id;
+  const userId = req.session.user_id;
   const id = req.params.id;
 
   if (!urlDatabase[id]) {
@@ -224,8 +237,8 @@ app.post("/urls/:id/delete", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-  const userId = req.cookies.user_id;
-  // userid is to check if the user logged in, but the hacker can see the unencrypted cookie user_id's value and know the user id exist, and use curl to skip the login page to go directly to /urls),so also need to encrypt cookies
+  const userId = req.session.user_id;
+  // userid is to check if the user logged in, but the hacker can see the unencrypted cookie user_id's value and know the user id exist, and change the value of user_id in DevTool to skip the login page and go directly to /urls),so also need to encrypt cookies
   if (users[userId]) {
     res.redirect("/urls");
     return;
@@ -250,13 +263,17 @@ app.post("/login", (req, res) => {
   
   const hashedPassword = user.hashedPassword;
   if (bcrypt.compareSync(password, hashedPassword)) {
-    res.cookie("user_id", user.id);
+    // res.cookie("user_id", user.id);
+    req.session.user_id = user.id;
+    //save the encrypted user_id (cookie key)'s value as user.id
+    console.log(req.session);
     res.redirect('/urls');
     return;
   //check if entered password matches with the one in users 
+  } else {
+    res.send("403 Bad log in, Please <a href='/login'>try again</a>");
   }
   
-   res.send("403 Bad log in, Please <a href='/login'>try again</a>");
 
   // console.log("email", req.body.email);
   // for (let userID in users) {
@@ -281,19 +298,21 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  // res.clearCookie("user_id");
+  req.session = null;
+  //clear session(encrypted cookies)
   res.redirect("/login");
 });
 
 app.get("/register", (req, res) => {
-  const userId = req.cookies.user_id;
+  const userId = req.session.user_id;
   if (users[userId]) {
     return res.redirect("/urls");
     // if user logged in, can find it's id from req.cookies,user_id.
   };
 
   const templateVars = {
-    user: users[req.cookies.user_id]
+    user: users[req.session.user_id]
   };
   res.render("register", templateVars);
 });
@@ -319,12 +338,14 @@ app.post("/register", (req, res) => {
   // added new user into users database
   console.log(users);
 
-  res.cookie("user_id", id);
+  // res.cookie("user_id", id);
   // set cookie user_id 's value as the random generated id
   //But because the cookie user_id is not encrypted, people can see the user_id cookie value in the DevTool, meaning the user exists, and use that to log in without going through log in page, using %curl POST
 
-  
-  res.redirect("/urls");
+  req.session.user_id = users[id].id;
+  // set encrypted cookies
+
+  return res.redirect("/urls");
 
   // if (req.body.email.length === 0 || req.body.password.length === 0) {
   //   res.send("400");
