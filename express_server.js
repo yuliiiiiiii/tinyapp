@@ -15,12 +15,12 @@ app.use(express.urlencoded({ extended: true }));
 
 // app.use(cookieParser()); //in order to use req.cookie
 
- app.use(cookieSession ({
+app.use(cookieSession({
   // in order to use cookie_session the middleware to encryp cookies
-    name: 'Bimas',
-    // name is the cookies key to set, whose value will be encryped
-    keys: ['one', 'two', 'three', 'four']
- }));
+  name: 'Bimas',
+  // name is the cookies key to set, whose value will be encryped
+  keys: ['one', 'two', 'three', 'four']
+}));
 
 let urlDatabase = {
   b6UTxQ: { longURL: 'https://www.tsn.ca', userID: 'aJ48lW' },
@@ -71,7 +71,14 @@ function generateRandomString() {
 }
 
 app.get("/", (req, res) => {//get in order to see your response! get is to get whatever info on the webpage when you first landed on the page.
-  res.send("Hello!");
+  const userId = req.session.user_id;
+  const user = users[userId];
+  if (user) {
+    res.redirect('/urls');
+  };
+  if (!user) {
+    res.redirect('/login');
+  };
 });
 
 app.get("/urls.json", (req, res) => {
@@ -98,13 +105,14 @@ app.get("/urls", (req, res) => {
     // return an array of id's!!!
     user: users[userId]
   }; //the variable needs to be inside an object so we can access values through keys
-  res.render('urls_index', templateVars); 
+  res.render('urls_index', templateVars);
   return;//('the template to show HTML on the /urls web page', the variable whose value is an object to be referenced in the template)
 });
 
 app.get("/urls/new", (req, res) => {
   const userId = req.session.user_id;
-  if (!userId) {
+  const user = users[userId];
+  if (!user) {
     res.redirect("/login");
   }
 
@@ -145,21 +153,21 @@ app.get("/urls/:id", (req, res) => {
   }
 
   if (!user) {
-     res.send("<h1>Please log in to see your URLs.<h1>");
-     return;
+    res.send("<h1>Please log in to see your URLs.<h1>");
+    return;
     //  check if the user is logged in
-   };
+  };
 
   if (urlDatabase[id].userID !== userId) {
-    res.send ("You don't own the URL");
+    res.send("You can't edit the URL because you don't own it.");
     return;
     // check if user owns the shortURl
   }
- 
+
   const templateVars = {
-    id:id,
+    id: id,
     user: users[userId],
-    longURL:urlDatabase[id].longURL
+    longURL: urlDatabase[id].longURL
   };
   res.render("urls_show", templateVars);
 });
@@ -167,8 +175,9 @@ app.get("/urls/:id", (req, res) => {
 app.get("/u/:id", (req, res) => {
   let shortenURL = req.params.id; //to access :d which is entered by user in the domain bar
   let longURL = urlDatabase[shortenURL].longURL;
+
   if (!longURL) {
-    res.send("<h1>The shortended url you are trying to access does not exist.</h1>");
+    res.send("<h1>The url you are trying to access does not exist.</h1>");
   }
 
   res.redirect(longURL);
@@ -192,14 +201,16 @@ app.post("/urls/:id", (req, res) => {
     return;
   }
 
-    urlDatabase[id].longURL = req.body.editLongURL;
-    res.redirect("/urls");
+  urlDatabase[id].longURL = req.body.editLongURL;
+  res.redirect("/urls");
 }
 );
 
 app.post("/urls/:id/delete", (req, res) => {
   const userId = req.session.user_id;
   const id = req.params.id;
+  
+  console.log(urlDatabase[id])
 
   if (!urlDatabase[id]) {
     return res.send("The URL does not exist");
@@ -214,9 +225,9 @@ app.post("/urls/:id/delete", (req, res) => {
     res.send("<h1>You are not authorised to delete.</h1>");
     return;
   }
-
-    delete urlDatabase[id]; //delete the route parameter(key) and it's value from the urlDatabase which is an object
-    res.redirect("/urls");
+  
+  delete urlDatabase[id]; //delete the route parameter(key) and it's value from the urlDatabase which is an object
+  res.redirect("/urls");
 });
 
 app.get("/login", (req, res) => {
@@ -236,14 +247,14 @@ app.get("/login", (req, res) => {
 app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  
+
   const user = getUserByEmail(email, users);
-  
+
   if (!user) {
     return res.send("403 Bad log in, Please <a href='/login'>try again</a>");
     // check if user exist
   }
-  
+
   const hashedPassword = user.hashedPassword;
   if (bcrypt.compareSync(password, hashedPassword)) {
     // res.cookie("user_id", user.id);
@@ -252,11 +263,11 @@ app.post("/login", (req, res) => {
     console.log(req.session);
     res.redirect('/urls');
     return;
-  //check if entered password matches with the one in users 
+    //check if entered password matches with the one in users 
   } else {
     res.send("403 Bad log in, Please <a href='/login'>try again</a>");
   }
-  
+
 
   // console.log("email", req.body.email);
   // for (let userID in users) {
@@ -280,13 +291,6 @@ app.post("/login", (req, res) => {
   // res.redirect("/urls");
 });
 
-app.post("/logout", (req, res) => {
-  // res.clearCookie("user_id");
-  req.session = null;
-  //clear session(encrypted cookies)
-  res.redirect("/login");
-});
-
 app.get("/register", (req, res) => {
   const userId = req.session.user_id;
   if (users[userId]) {
@@ -295,7 +299,7 @@ app.get("/register", (req, res) => {
   };
 
   const templateVars = {
-    user: users[req.session.user_id]
+    user: users[userId]
   };
   res.render("register", templateVars);
 });
@@ -308,11 +312,11 @@ app.post("/register", (req, res) => {
   const hashedPassword = bcrypt.hashSync(password, salt);
 
   if (!email || !password) {
-    return res.send("Email or password should not be empty, please try again.Please <a href='/register'>try again</a>");
+    return res.send("400 Email or password should not be empty, please <a href='/register'>try again</a>");
   }
 
   if (getUserByEmail(email, users)) {
-    return res.send("User exists, please <a href='/register'>try again</a>");
+    return res.send("400 User exists, please <a href='/register'>try again</a>");
   }
 
   const id = generateRandomString();
@@ -352,6 +356,13 @@ app.post("/register", (req, res) => {
   // };
   // res.cookie("user_id", userRandomID);
   // res.redirect("/urls");
+});
+
+app.post("/logout", (req, res) => {
+  // res.clearCookie("user_id");
+  req.session = null;
+  //clear session(encrypted cookies)
+  res.redirect("/login");
 });
 
 app.listen(PORT, () => {
