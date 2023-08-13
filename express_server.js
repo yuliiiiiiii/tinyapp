@@ -17,52 +17,35 @@ app.use(express.urlencoded({ extended: true }));
 
  app.use(cookieSession ({
   // in order to use cookie_session the middleware to encryp cookies
-    name: 'banana',
+    name: 'Bimas',
     // name is the cookies key to set, whose value will be encryped
     keys: ['one', 'two', 'three', 'four']
  }));
 
 let urlDatabase = {
-  b6UTxQ: {
-    longURL: "https://www.tsn.ca",
-    userID: "aJ48lW"
-  },
-  i3BoGr: {
-    longURL: "https://www.google.ca",
-    userID: "aJ48lW"
-  },
-  IQ6965: {
-    longURL: "http://google.com",
-    userID: "9hvRSr"
-  }
+  b6UTxQ: { longURL: 'https://www.tsn.ca', userID: 'aJ48lW' },
+  i3BoGr: { longURL: 'https://www.google.ca', userID: 'aJ48lW' },
+  IQ6965: { longURL: 'http://google.com', userID: '9hvRSr' },
+  NJ9i5T: { longURL: 'http://google.com', userID: 'UjUlui' }
 };
 
 let users = {
   aJ48lW: { id: 'aJ48lW', email: 'user@example.com', password: '123' },
-  user2RandomID: {
-    id: 'user2RandomID',
-    email: 'user2@example.com',
-    password: '123'
-  },
+  user2RandomID: { id: 'user2RandomID', email: 'user2@example.com', password: '123' },
   '9hvRSr': {
     id: '9hvRSr',
     email: 'user3@example.com',
     hashedPassword: '$2a$10$Qkpt.I6j7YZNmsJgQQOWde/9rO8mGxFv7WnX6fFKfqTrbj4YmYGxu'
+  },
+  UjUlui: {
+    id: 'UjUlui',
+    email: 'user1@example.com',
+    hashedPassword: '$2a$10$jes3t85CFT8kAHXLbEVSte03XigsW3bmUtin0k7Zyxw/8xrOO6agK'
   }
-
 };
 //create a database to store and access users data
 
-const getUserByEmail = function(email) {
-
-  for (let userID in users) {
-    const user = users[userID];
-    if (email === user.email) {
-      return user;
-    }
-  }
-  return null;
-};
+const getUserByEmail = require('./helpers');
 
 const urlsForUser = function(userId) {
   const urls = {};
@@ -109,7 +92,7 @@ app.get("/urls", (req, res) => {
   if (!user) {
     return res.send("Not logged in, Please<a href='/login'> log in</a>");
   };
-
+  // console.log(urlDatabase);
   const templateVars = {
     urls: urlsForUser(userId),
     // return an array of id's!!!
@@ -172,7 +155,7 @@ app.get("/urls/:id", (req, res) => {
     return;
     // check if user owns the shortURl
   }
-
+ 
   const templateVars = {
     id:id,
     user: users[userId],
@@ -254,7 +237,7 @@ app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   
-  const user = getUserByEmail(email);
+  const user = getUserByEmail(email, users);
   
   if (!user) {
     return res.send("403 Bad log in, Please <a href='/login'>try again</a>");
@@ -328,7 +311,7 @@ app.post("/register", (req, res) => {
     return res.send("Email or password should not be empty, please try again.Please <a href='/register'>try again</a>");
   }
 
-  if (getUserByEmail(email)) {
+  if (getUserByEmail(email, users)) {
     return res.send("User exists, please <a href='/register'>try again</a>");
   }
 
@@ -336,7 +319,7 @@ app.post("/register", (req, res) => {
   const user = { id, email, hashedPassword };
   users[id] = user;
   // added new user into users database
-  console.log(users);
+  // console.log(users);
 
   // res.cookie("user_id", id);
   // set cookie user_id 's value as the random generated id
