@@ -45,30 +45,11 @@ let users = {
 };
 //create a database to store and access users data
 
-const getUserByEmail = require('./helpers');
+const  { getUserByEmail } = require('./helpers');
 
-const urlsForUser = function(userId) {
-  const urls = {};
+const { urlsForUser } = require('./helpers');
 
-  const ids = Object.keys(urlDatabase);
-  for (const id of ids) {
-    const url = urlDatabase[id];
-    if (url.userID === userId) {
-      urls[id] = url;
-    }
-  }
-  return urls;
-};
-
-function generateRandomString() {
-  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890";
-  let randomId = "";
-  while (randomId.length < 6) {
-    let index = Math.floor(Math.random() * characters.split('').length);
-    randomId += characters.split('')[index];
-  };
-  return randomId;
-}
+const { generateRandomString } = require('./helpers');
 
 app.get("/", (req, res) => {//get in order to see your response! get is to get whatever info on the webpage when you first landed on the page.
   const userId = req.session.user_id;
@@ -101,7 +82,7 @@ app.get("/urls", (req, res) => {
   };
   // console.log(urlDatabase);
   const templateVars = {
-    urls: urlsForUser(userId),
+    urls: urlsForUser(userId, urlDatabase),
     // return an array of id's!!!
     user: users[userId]
   }; //the variable needs to be inside an object so we can access values through keys
